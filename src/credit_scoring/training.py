@@ -40,3 +40,37 @@ def _cross_validate(pipelines, X, y) -> dict:
             "cv_pr_auc": round(float(scores["test_average_precision"].mean()), 4),
         }
     return results
+
+
+def _write_reports(y_test, proba, threshold) -> None:
+    settings = get_settings()
+    reports = settings.artifacts_dir / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+
+    frac_pos, mean_pred = calibration_curve(y_test, proba, n_bins=10, strategy="quantile")
+    plt.figure(figsize=(6, 5))
+    plt.plot(mean_pred, frac_pos, marker="o", label="model")
+    plt.plot([0, 1], [0, 1], "k--", linewidth=1, label="perfect")
+    plt.xlabel("mean predicted probability")
+    plt.ylabel("observed default rate")
+    plt.title("Calibration")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(reports / "calibration.png", dpi=120)
+    plt.close()
+
+    import numpy as np
+
+    grid = np.linspace(0.01, 0.99, 99)
+    costs = [total_cost(y_test, proba, t) for t in grid]
+    plt.figure(figsize=(6, 5))
+    plt.plot(grid, costs)
+    plt.axvline(threshold, color="red", linestyle="--", linewidth=1, label=f"min-cost {threshold:.2f}")
+    plt.axvline(0.5, color="grey", linestyle=":", linewidth=1, label="default 0.5")
+    plt.xlabel("decision threshold")
+    plt.ylabel("total business cost")
+    plt.title("Cost vs decision threshold")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(reports / "cost_threshold.png", dpi=120)
+    plt.close()
