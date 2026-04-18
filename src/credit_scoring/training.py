@@ -74,3 +74,61 @@ def _write_reports(y_test, proba, threshold) -> None:
     plt.tight_layout()
     plt.savefig(reports / "cost_threshold.png", dpi=120)
     plt.close()
+
+
+def train() -> dict:
+    settings = get_settings()
+
+    log.info("loading_data")
+    frame = load_dataset()
+    report = validate_frame(frame)
+    log.info("data_validated", rows=report.rows, default_rate=round(report.default_rate, 4))
+
+    train_frame, test_frame = train_test_frames(frame)
+    X_train, y_train = train_frame[FEATURES], train_frame[TARGET]
+    X_test, y_test = test_frame[FEATURES], test_frame[TARGET]
+
+    pipelines = candidate_pipelines()
+    cv_results = _cross_validate(pipelines, X_train, y_train)
+    best_name = max(cv_results, key=lambda n: cv_results[n]["cv_pr_auc"])
+    log.info("model_selected", best=best_name, cv=cv_results)
+
+    calibrated = CalibratedClassifierCV(pipelines[best_name], method="isotonic", cv=settings.cv_folds)
+    calibrated.fit(X_train, y_train)
+    proba = calibrated.predict_proba(X_test)[:, 1]
+
+    metrics = ranking_metrics(y_test, proba)
+    threshold, _ = best_cost_threshold(y_test.values, proba)
+    op = operating_point(y_test.values, proba, threshold)
+    _write_reports(y_test, proba, threshold)
+
+    reference = build_reference(train_frame[FEATURES])
+    save_reference(reference)
+
+    version = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    metadata = {
+        "version": version,
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "algorithm": best_name,
+        "threshold": round(float(threshold), 4),
+        "metrics": metrics,
+        "operating_point": op,
+        "cv": cv_results,
+        "features": FEATURES,
+        "cost": {
+            "false_negative": settings.cost_false_negative,
+            "false_positive": settings.cost_false_positive,
+        },
+        "default_rate": round(report.default_rate, 4),
+    }
+    get_registry().register(calibrated, metadata)
+    log.info("model_registered", version=version, threshold=metadata["threshold"], **metrics)
+    return metadata
+
+
+def main() -> None:
+    train()
+
+
+if __name__ == "__main__":
+    main()
