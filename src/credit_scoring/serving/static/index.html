@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#edf1f5" />
+    <meta
+      name="description"
+      content="Inspect credit model validation, score an application and monitor feature drift."
+    />
+    <title>Caliper Risk · Model monitoring</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%232b4ecb'/%3E%3Cpath d='M10 28V12h8a6 6 0 0 1 0 12h-3m5-2 9 6' fill='none' stroke='%23f5f7ff' stroke-width='3'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/assets/style.css" />
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#overview">Skip to model results</a>
+    <aside class="rail">
+      <a class="brand" href="#overview" aria-label="Caliper Risk home"
+        ><span class="brand-mark" aria-hidden="true">c<span>↗</span></span
+        ><span
+          >Caliper Risk<span class="brand-sub">RESEARCH WORKSPACE</span></span
+        ></a
+      >
+      <div class="rail-label">WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <a href="#overview" class="nav-link active"
+          ><span aria-hidden="true">◫</span> Model overview
+          <span class="nav-arrow">↗</span></a
+        >
+        <a href="#score" class="nav-link"
+          ><span aria-hidden="true">⌁</span> Score application</a
+        >
+        <a href="#methodology" class="nav-link"
+          ><span aria-hidden="true">≡</span> Methodology</a
+        >
+      </nav>
+      <div class="rail-bottom">
+        <div class="dataset-mark" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <span class="rail-label">DATASET</span
+        ><strong>Credit-card defaults</strong>
+        <p>UCI · Taiwan<br />30,000 borrower records</p>
+        <a href="/docs">API reference <span aria-hidden="true">↗</span></a>
+        <small>Research application</small>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <span>Risk analytics <span class="slash">/</span> Model monitoring</span
+        ><span class="status" id="status" role="status">Connecting</span>
+      </header>
+      <div class="content">
+        <section id="overview" aria-labelledby="page-title">
+          <div class="heading-row">
+            <div>
+              <p class="eyebrow">CALIPER RISK / MODEL MONITORING</p>
+              <h1 id="page-title">Model performance<span>.</span></h1>
+              <p class="lede">
+                Validation results and serving activity, in one view.
+              </p>
+            </div>
+            <button id="export" class="button secondary" disabled>
+              Export report <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <div id="error" class="notice" role="alert" hidden></div>
+          <div class="model-strip">
+            <span
+              ><i class="signal"></i><b id="algorithm">Loading model</b></span
+            ><span>VERSION <b class="mono" id="version">—</b></span
+            ><span>TRAINED <b class="mono" id="trained">—</b></span
+            ><button id="refresh" aria-label="Refresh model and serving data">
+              ↻ <span>Refresh</span>
+            </button>
+          </div>
+          <div class="metric-band">
+            <div class="metric primary-metric">
+              <span class="eyebrow">ROC-AUC</span>
+              <div class="big-number" id="auc">—</div>
+              <span class="metric-note">Discrimination on the holdout</span>
+              <div class="mini-scale"><i id="auc-scale"></i></div>
+              <div class="scale-labels mono">
+                <span>0.5 · RANDOM</span><span>1.0 · PERFECT</span>
+              </div>
+            </div>
+            <div class="metric">
+              <span class="eyebrow">PRECISION–RECALL AUC</span>
+              <div class="metric-value" id="pr">—</div>
+              <span class="metric-note">Ranking performance for defaults</span
+              ><span class="metric-foot">Higher is better <span>↗</span></span>
+            </div>
+            <div class="metric">
+              <span class="eyebrow">BRIER SCORE</span>
+              <div class="metric-value" id="brier">—</div>
+              <span class="metric-note">Mean squared probability error</span
+              ><span class="metric-foot">Lower is better <span>↘</span></span>
+            </div>
+            <div class="metric">
+              <span class="eyebrow">DECISION THRESHOLD</span>
+              <div class="metric-value" id="threshold">—</div>
+              <span class="metric-note">Decline above this probability</span
+              ><span class="metric-foot" id="cost-label"
+                >Stored model policy</span
+              >
+            </div>
+          </div>
+          <div class="analysis-grid">
+            <article class="panel outcomes-panel">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">HOLDOUT EVALUATION</p>
+                  <h2>Classification outcomes</h2>
+                </div>
+                <span class="tag mono" id="sample-count">— RECORDS</span>
+              </div>
+              <p class="small-copy" id="outcome-description">
+                Loading recorded validation outcomes.
+              </p>
+              <div class="outcomes" id="outcomes"></div>
+              <div class="outcome-footer">
+                <span
+                  ><i class="legend-dot blue"></i>Correct classification</span
+                ><span><i class="legend-dot rust"></i>Classification error</span
+                ><strong id="recall">— recall</strong>
+              </div>
+            </article>
+            <article class="panel activity-panel">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">CURRENT PROCESS</p>
+                  <h2>Serving activity</h2>
+                </div>
+                <span class="live-dot" aria-hidden="true"></span>
+              </div>
+              <div class="activity-total mono" id="total">0</div>
+              <p class="small-copy">Applications scored since startup</p>
+              <div class="activity-track"><i id="approval-track"></i></div>
+              <div class="activity-row">
+                <span><i class="legend-dot blue"></i>Approved</span
+                ><b class="mono" id="approved">0</b>
+              </div>
+              <div class="activity-row">
+                <span><i class="legend-dot rust"></i>Declined</span
+                ><b class="mono" id="declined">0</b>
+              </div>
+              <div class="drift-status">
+                <span class="eyebrow">FEATURE DRIFT</span
+                ><strong id="drift-title">No batch observed</strong>
+                <p id="drift-copy">
+                  Score a batch through the API to compare its features with the
+                  training data.
+                </p>
+              </div>
+            </article>
+          </div>
+          <article class="comparison">
+            <div>
+              <p class="eyebrow">MODEL SELECTION</p>
+              <h2>Cross-validation</h2>
+              <p class="small-copy">Scores recorded during training.</p>
+            </div>
+            <div id="cv" class="cv-rows">
+              <p class="small-copy">Loading candidate models.</p>
+            </div>
+          </article>
+        </section>
+        <section id="score" class="score-section" aria-labelledby="score-title">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">APPLICATION REVIEW</p>
+              <h2 id="score-title">Score an application.</h2>
+              <p class="small-copy">
+                Edit the example application and calculate its default
+                probability.
+              </p>
+            </div>
+            <span class="tag">All amounts in NT$</span>
+          </div>
+          <div class="score-grid">
+            <form id="score-form">
+              <div class="input-grid">
+                <label
+                  >Credit limit (NT$)<input
+                    name="limit_bal"
+                    type="number"
+                    min="1"
+                    value="20000"
+                    required /></label
+                ><label
+                  >Age<input
+                    name="age"
+                    type="number"
+                    min="18"
+                    max="120"
+                    value="24"
+                    required /></label
+                ><label
+                  >Latest repayment status<select name="pay_0">
+                    <option value="-2">No consumption</option>
+                    <option value="-1">Paid in full</option>
+                    <option value="0">Revolving credit</option>
+                    <option value="1">1 month late</option>
+                    <option value="2" selected>2 months late</option>
+                    <option value="3">3 months late</option>
+                  </select></label
+                ><label
+                  >Latest bill (NT$)<input
+                    name="bill_amt1"
+                    type="number"
+                    value="3913"
+                    required
+                /></label>
+              </div>
+              <details>
+                <summary>Review all application fields</summary>
+                <p class="small-copy">
+                  The fields below complete the six-month example. All values
+                  are editable.
+                </p>
+                <div class="input-grid" id="extra-fields"></div>
+              </details>
+              <button type="submit" class="button primary" id="score-button">
+                Calculate default probability <span aria-hidden="true">↗</span>
+              </button>
+            </form>
+            <div class="score-result" id="score-result" aria-live="polite">
+              <span class="eyebrow">MODEL ESTIMATE</span>
+              <div class="result-placeholder">—<span>%</span></div>
+              <p>
+                Run an assessment to see the probability and policy decision.
+              </p>
+              <div class="result-note">
+                Scores use the loaded model and its stored threshold.
+              </div>
+            </div>
+          </div>
+        </section>
+        <section
+          id="methodology"
+          class="method-section"
+          aria-labelledby="method-title"
+        >
+          <div>
+            <p class="eyebrow">RESEARCH NOTES</p>
+            <h2 id="method-title">What these results mean.</h2>
+          </div>
+          <div class="method-columns">
+            <div>
+              <h3>A single historical cohort</h3>
+              <p>
+                The model uses credit limits, borrower attributes and six months
+                of payment history from the UCI Taiwan dataset. Holdout metrics
+                describe this cohort.
+              </p>
+            </div>
+            <div>
+              <h3>A cost-based decision</h3>
+              <p>
+                The threshold balances missed defaults against declined repaying
+                borrowers. It was selected on the evaluation cohort, so these
+                policy results are retrospective.
+              </p>
+            </div>
+            <div>
+              <h3>Monitoring after training</h3>
+              <p>
+                Population stability index compares batch features with the
+                training reference. A drift signal calls for investigation; it
+                does not measure prediction accuracy.
+              </p>
+            </div>
+          </div>
+        </section>
+        <footer>
+          <span>Caliper Risk <span class="slash">/</span> Model monitoring</span
+          ><span>Historical validation · Research use</span>
+        </footer>
+      </div>
+    </main>
+  </body>
+</html>
