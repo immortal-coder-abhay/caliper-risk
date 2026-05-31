@@ -21,7 +21,7 @@ N_BINS = 10
 
 
 def build_reference(frame: pd.DataFrame) -> dict:
-    profile: dict = {"rows": int(len(frame)), "numeric": {}, "categorical": {}}
+    profile: dict = {"rows": len(frame), "numeric": {}, "categorical": {}}
 
     for column in NUMERIC:
         values = frame[column].to_numpy(dtype=float)

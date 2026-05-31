@@ -75,7 +75,7 @@ def test_dashboard_reports_model_and_scoring_activity(model_env, example):
 
 
 def test_dashboard_remains_available_without_a_model(model_env):
-    import credit_scoring.serving.service as service
+    from credit_scoring.serving import service
 
     with _client() as client:
         service._service = service.ScoringService()

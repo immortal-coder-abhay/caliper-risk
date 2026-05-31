@@ -17,7 +17,7 @@ from ..config import get_settings
 def total_cost(y_true, proba, threshold: float) -> float:
     settings = get_settings()
     pred = (np.asarray(proba) >= threshold).astype(int)
-    tn, fp, fn, tp = confusion_matrix(y_true, pred, labels=[0, 1]).ravel()
+    _tn, fp, fn, _tp = confusion_matrix(y_true, pred, labels=[0, 1]).ravel()
     return float(fp * settings.cost_false_positive + fn * settings.cost_false_negative)
 
 

@@ -72,9 +72,9 @@ def model_env(tmp_path):
     os.environ["CS_REGISTRY_DIR"] = str(tmp_path / "registry")
     os.environ["CS_REFERENCE_PATH"] = str(tmp_path / "reference.json")
 
-    import credit_scoring.config as config
-    import credit_scoring.models.registry as registry
-    import credit_scoring.serving.service as service
+    from credit_scoring import config
+    from credit_scoring.models import registry
+    from credit_scoring.serving import service
 
     config._settings = None
     registry._registry = None

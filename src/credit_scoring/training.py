@@ -11,20 +11,25 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import matplotlib
+import matplotlib.pyplot as plt
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.model_selection import StratifiedKFold, cross_validate
+
+from .config import get_settings
+from .data import load_dataset, train_test_frames, validate_frame
+from .domain import FEATURES, TARGET
+from .features import candidate_pipelines
+from .logging_setup import get_logger
+from .models import (
+    best_cost_threshold,
+    get_registry,
+    operating_point,
+    ranking_metrics,
+)
+from .models.threshold import total_cost
+from .monitoring import build_reference, save_reference
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve  # noqa: E402
-from sklearn.model_selection import StratifiedKFold, cross_validate  # noqa: E402
-
-from .config import get_settings  # noqa: E402
-from .data import load_dataset, train_test_frames, validate_frame  # noqa: E402
-from .domain import FEATURES, TARGET  # noqa: E402
-from .features import candidate_pipelines  # noqa: E402
-from .logging_setup import get_logger  # noqa: E402
-from .models import best_cost_threshold, get_registry, operating_point, ranking_metrics  # noqa: E402
-from .models.threshold import total_cost  # noqa: E402
-from .monitoring import build_reference, save_reference  # noqa: E402
 
 log = get_logger(__name__)
 
